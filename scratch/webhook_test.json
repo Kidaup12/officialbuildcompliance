@@ -1,0 +1,32 @@
+{
+  "analysisId": "1d07e1d9-0242-4f25-b002-36e53d40ccca",
+  "status": "completed",
+  "result": {
+    "summary": {
+      "overall_compliance": null,
+      "non_compliant_clauses": []
+    },
+    "Setback Compliance": {
+      "description": "Setbacks from property boundaries per SI-02 Building Envelopes regulations",
+      "required": "Setbacks must meet the minimum distances specified in the SI-02 Building Envelopes document depending on wall height, length, and boundary type.",
+      "proposed": "Insufficient data provided in the input to measure setbacks from property boundaries.",
+      "page_assessed": "Not specified",
+      "object_on_plan": "Property boundaries and building footprints",
+      "compliant": null,
+      "comment": "Setback distances from the building to property boundaries are not explicitly given in the extracted building data, preventing compliance verification.",
+      "severity": "Low",
+      "recommendation": "Provide dimensional information for building setbacks relative to all adjoining property boundaries in the site plans for full assessment."
+    },
+    "Height and Envelope Limits": {
+      "description": "Building height and envelope dimensions as per SI-02 regulations",
+      "required": "Building height and envelope must conform to limits set by SI-02 applicable to the zoning and site classification.",
+      "proposed": "Building height and envelope dimensions not detailed in extracted data.",
+      "page_assessed": "Not specified",
+      "object_on_plan": "Building envelope and height profiles",
+      "compliant": null,
+      "comment": "No specific data about building heights or envelope dimensions was available, so compliance cannot be confirmed.",
+      "severity": "Low",
+      "recommendation": "Provide building elevation data and envelop dimensions to enable detailed assessment against SI-02 limits."
+    }
+  }
+}

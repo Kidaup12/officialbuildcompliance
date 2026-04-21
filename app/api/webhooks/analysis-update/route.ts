@@ -19,16 +19,15 @@ export async function POST(request: Request) {
         }
 
         // Check environment variables
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            console.error('Missing Supabase environment variables:', {
-                hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-                hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
-            })
+            const missing = []
+            if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missing.push('NEXT_PUBLIC_SUPABASE_URL')
+            if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY')
+            
+            console.error('Missing Supabase environment variables:', missing)
             return NextResponse.json(
-                { error: "Server configuration error" },
+                { error: `Server configuration error: Missing ${missing.join(', ')}` },
                 { status: 500 }
             )
-        }
 
         // Use service role key to bypass RLS
         console.log('Creating Supabase client with service role')
