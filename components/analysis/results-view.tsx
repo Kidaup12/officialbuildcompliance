@@ -31,6 +31,7 @@ interface ReportData {
     violations: Violation[]
     totalViolations: number
     criticalViolations: number
+    originalPdfUrl?: string
     pdfUrl?: string
     annotatedPdfUrl?: string
 }
@@ -65,7 +66,7 @@ export function ResultsView({ analysisId }: ResultsViewProps) {
             try {
                 const { data: analysis, error: analysisError } = await supabase
                     .from("analyses")
-                    .select("status, reports(*), project_versions(projects(name), project_id)")
+                    .select("status, pdf_url, reports(*), project_versions(projects(name), project_id)")
                     .eq("id", analysisId)
                     .single()
 
@@ -95,8 +96,7 @@ export function ResultsView({ analysisId }: ResultsViewProps) {
                 setStatus(analysis.status)
 
                 if (analysis.status === 'completed') {
-                    if (analysis.reports && analysis.reports.length > 0) {
-                        processReport(analysis.reports[0])
+                        processReport(analysis.reports[0], analysis.pdf_url)
                         setLoading(false)
                         return true // Stop polling
                     } else {
@@ -151,7 +151,7 @@ export function ResultsView({ analysisId }: ResultsViewProps) {
         }
     }, [analysisId])
 
-    const processReport = (report: any) => {
+    const processReport = (report: any, originalPdfUrl?: string) => {
         try {
             const jsonReport = report.json_report
             setRawJsonReport(jsonReport)
@@ -246,7 +246,8 @@ export function ResultsView({ analysisId }: ResultsViewProps) {
                 violations,
                 totalViolations: violations.length,
                 criticalViolations: criticalCount,
-                pdfUrl: report.annotated_pdf_url, // Use annotated PDF if available
+                originalPdfUrl: originalPdfUrl,
+                pdfUrl: report.annotated_pdf_url || originalPdfUrl, // Fallback to original if no annotated
                 annotatedPdfUrl: report.annotated_pdf_url
             })
         } catch (err) {
@@ -409,7 +410,7 @@ export function ResultsView({ analysisId }: ResultsViewProps) {
                         </div>
                     ) : (
                         <PDFViewer
-                            url={reportData.annotatedPdfUrl || reportData.pdfUrl || "/mock-plan.pdf"}
+                            url={pdfView === 'original' ? (reportData.originalPdfUrl || "/mock-plan.pdf") : (reportData.annotatedPdfUrl || reportData.pdfUrl || "/mock-plan.pdf")}
                             violations={reportData.violations}
                             selectedViolationId={selectedViolationId}
                         />
