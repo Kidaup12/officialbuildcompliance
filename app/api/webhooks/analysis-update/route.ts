@@ -1,6 +1,10 @@
+import { ANALYSIS_COST } from "@/lib/constants"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
-import { ANALYSIS_COST } from "@/lib/constants"
+
+export async function GET() {
+    return NextResponse.json({ message: "Webhook is live and using latest code (V2)" })
+}
 
 export async function POST(request: Request) {
     try {
