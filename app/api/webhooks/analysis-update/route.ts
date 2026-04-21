@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         if (missing.length > 0) {
             console.error('Missing Supabase environment variables:', missing)
             return NextResponse.json(
-                { error: `Server configuration error: Missing ${missing.join(', ')}` },
+                { error: `DEBUG_CHECK_V1: Server configuration error: Missing ${missing.join(', ')}` },
                 { status: 500 }
             )
         }
