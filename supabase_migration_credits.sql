@@ -1,14 +1,14 @@
 -- Create user_credits table
 CREATE TABLE IF NOT EXISTS public.user_credits (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  credits INTEGER NOT NULL DEFAULT 100,
+  credits INTEGER NOT NULL DEFAULT 10,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Set default credits for existing users
 INSERT INTO public.user_credits (user_id, credits)
-SELECT id, 100 FROM auth.users
+SELECT id, 10 FROM auth.users
 ON CONFLICT (user_id) DO NOTHING;
 
 -- Enable RLS
@@ -31,7 +31,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.user_credits (user_id, credits)
-  VALUES (NEW.id, 100);
+  VALUES (NEW.id, 10);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

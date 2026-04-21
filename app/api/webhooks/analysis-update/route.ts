@@ -64,9 +64,10 @@ export async function POST(request: Request) {
 
         // If completed (and not failed), extract summary data from result
         if (finalStatus === "completed" && result) {
-            const score = result.overall_assessment?.compliance_score || 0
-            const allIssues = [...(result.violations || []), ...(result.warnings || [])]
-            const violationsCount = allIssues.length
+            // Updated to match your JSON structure
+            const isCompliant = result.summary?.overall_compliance === true
+            const score = isCompliant ? 100 : 0
+            const violationsCount = result.summary?.non_compliant_clauses?.length || 0
 
             updateData.score = score
             updateData.violations = violationsCount

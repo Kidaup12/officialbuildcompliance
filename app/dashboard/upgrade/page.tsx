@@ -7,10 +7,10 @@ const pricingPlans = [
     {
         name: "Starter",
         price: "$20",
-        credits: 500,
+        credits: 10,
         analyses: 10,
         features: [
-            "500 credits",
+            "10 credits",
             "10 compliance analyses",
             "All building codes",
             "PDF reports",
@@ -21,10 +21,10 @@ const pricingPlans = [
     {
         name: "Professional",
         price: "$50",
-        credits: 1500,
+        credits: 30,
         analyses: 30,
         features: [
-            "1,500 credits",
+            "30 credits",
             "30 compliance analyses",
             "All building codes",
             "PDF reports",
@@ -36,10 +36,10 @@ const pricingPlans = [
     {
         name: "Enterprise",
         price: "$150",
-        credits: 5000,
+        credits: 100,
         analyses: 100,
         features: [
-            "5,000 credits",
+            "100 credits",
             "100 compliance analyses",
             "All building codes",
             "PDF reports",
@@ -136,7 +136,7 @@ export default function UpgradePage() {
                         <div>
                             <h4 className="font-medium mb-2">How do credits work?</h4>
                             <p className="text-sm text-muted-foreground">
-                                Each compliance analysis costs 50 credits. Credits never expire and can be used anytime.
+                                Each compliance analysis costs 1 credit. Credits never expire and can be used anytime.
                             </p>
                         </div>
                         <div>
