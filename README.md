@@ -22,18 +22,21 @@ To enable conversational answers, set these **server-only** environment variable
 in `.env.local` or the deployment environment and redeploy:
 
 ```env
-GEMINI_API_KEY=your-server-side-key
-GEMINI_MODEL=your-enabled-gemini-model-id
+OPENROUTER_API_KEY=your-existing-openrouter-key
+# Optional: use the same model ID as your existing OpenRouter setup.
+# If omitted, OpenRouter uses your account default model.
+OPENROUTER_MODEL=your-provider/model-id
 ```
 
-Use a model supporting `generateContent` structured JSON output. The server sends
+Use an OpenRouter model supporting structured JSON output. The server sends
 the question, up to four earlier questions in the same document scope, and up to
-eight retrieved passages to Gemini. It accepts only citation IDs in those passages;
+eight retrieved passages to OpenRouter. It accepts only citation IDs in those passages;
 source URLs and page numbers come from the index, not model output. An unavailable
 provider or invalid citation response falls back to labelled document search.
-This connection is independent of the n8n project-analysis workflow. See Google's
-[generation API](https://ai.google.dev/api/generate-content) and
-[structured output documentation](https://ai.google.dev/gemini-api/docs/structured-output).
+Reuse the existing OpenRouter key and model; no separate Gemini key is needed.
+If the key is stored only in n8n, also configure it in the app's server environment.
+See OpenRouter's [API reference](https://openrouter.ai/docs/api-reference/overview)
+and [structured output documentation](https://openrouter.ai/docs/features/structured-outputs).
 
 Rebuild and verify the index after updating downloaded PDFs and their manifests:
 
