@@ -1,6 +1,7 @@
 "use client"
 
-import { Search, LogOut, MessageSquare, Mail } from "lucide-react"
+import { Search, LogOut, MessageSquare, Mail, BookOpen } from "lucide-react"
+import Link from "next/link"
 import { FeedbackDialog } from "@/components/feedback-dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -90,6 +91,7 @@ export function TopBar() {
             </div>
 
             <div className="flex items-center gap-4">
+                <Button asChild variant="ghost" size="icon" className="md:hidden"><Link href="/dashboard/library" aria-label="Docs and codes library"><BookOpen className="h-4 w-4" /></Link></Button>
                 {credits !== null && (
                     <div className="hidden md:flex items-center gap-2 mr-2">
                         <div

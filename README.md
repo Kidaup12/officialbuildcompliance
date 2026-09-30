@@ -2,6 +2,52 @@
 
 AI-powered building plan compliance analysis platform built with Next.js, Supabase, and n8n.
 
+## Kenyan document library
+
+Open `/dashboard/library`, or choose **Docs & codes** in the dashboard navigation.
+This is a standalone reference library, separate from project analyses. Signed-in
+users can select national and Nairobi documents, search their text, and follow
+citations to the original PDF pages. Earlier answers retain their own references.
+Conversations are held in page memory and are cleared when the page is left.
+
+The checked-in `data/kenya-library.json` index contains page-scoped text from the
+PDFs in `reference-documents/kenya`. Normal builds need no extraction or AI key.
+Search mode shows matching passages explicitly, without generating legal advice.
+The scanned Nairobi regularization Act is listed but excluded from retrieval until
+OCR is available. Partially extracted documents show page coverage. Historical and
+mirror copies are labelled and excluded from the default selection. The corpus is
+a dated collection, not a live check of amendments or legal applicability.
+
+To enable conversational answers, set these **server-only** environment variables
+in `.env.local` or the deployment environment and redeploy:
+
+```env
+GEMINI_API_KEY=your-server-side-key
+GEMINI_MODEL=your-enabled-gemini-model-id
+```
+
+Use a model supporting `generateContent` structured JSON output. The server sends
+the question, up to four earlier questions in the same document scope, and up to
+eight retrieved passages to Gemini. It accepts only citation IDs in those passages;
+source URLs and page numbers come from the index, not model output. An unavailable
+provider or invalid citation response falls back to labelled document search.
+This connection is independent of the n8n project-analysis workflow. See Google's
+[generation API](https://ai.google.dev/api/generate-content) and
+[structured output documentation](https://ai.google.dev/gemini-api/docs/structured-output).
+
+Rebuild and verify the index after updating downloaded PDFs and their manifests:
+
+```bash
+npm ci --prefix scratch/browser-testing
+node scratch/browser-testing/index-library.cjs
+node scratch/browser-testing/library-regression.cjs
+```
+
+The index builder verifies each PDF's manifest SHA-256 and preserves one-based
+original PDF page positions. It does not infer printed page numbers or perform OCR.
+Review extracted tables and diagrams against the original documents before relying
+on an interpretation. The PDF corpus and generated index must be updated together.
+
 ## 🚀 Quick Start
 
 ### Prerequisites

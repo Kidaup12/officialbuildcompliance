@@ -1,6 +1,7 @@
 "use client"
 
-import { Folder, MoreVertical, Trash2 } from "lucide-react"
+import { Folder, MoreVertical, Trash2, BookOpen } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -15,7 +16,7 @@ import { getFolders } from "@/lib/api"
 import { NewFolderDialog } from "./new-folder-dialog"
 import { useFolderStore } from "@/lib/store/folder-store"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useState } from "react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
@@ -28,6 +29,7 @@ export function FoldersPanel({ className }: FoldersPanelProps) {
     const queryClient = useQueryClient()
     const supabase = createClient()
     const router = useRouter()
+    const inLibrary = usePathname().startsWith('/dashboard/library')
 
     const { data: folders } = useQuery({
         queryKey: ["folders"],
@@ -85,11 +87,12 @@ export function FoldersPanel({ className }: FoldersPanelProps) {
 
             <ScrollArea className="flex-1 py-4">
                 <div className="px-2 space-y-1">
+                    <Button asChild variant={inLibrary ? 'secondary' : 'ghost'} className="w-full justify-start"><Link href="/dashboard/library" aria-current={inLibrary ? 'page' : undefined}><BookOpen className="mr-2 h-4 w-4" />Docs &amp; codes</Link></Button>
                     <Button
-                        variant={activeFolder === null ? "secondary" : "ghost"}
+                        variant={activeFolder === null && !inLibrary ? "secondary" : "ghost"}
                         className={cn(
                             "w-full justify-start",
-                            activeFolder === null && "bg-secondary"
+                            activeFolder === null && !inLibrary && "bg-secondary"
                         )}
                         onClick={() => {
                             setActiveFolder(null)

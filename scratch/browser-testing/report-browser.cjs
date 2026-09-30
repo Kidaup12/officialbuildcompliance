@@ -115,6 +115,61 @@ const server = http.createServer(async (req, res) => {
             assert.equal(lastUpdate.violations, 1);
             assert.deepEqual(saved[0].json_report.request_context.selected_codes, reportContext.selected_codes);
         });
+        let libraryAnswer;
+        await test('Standalone library opens with searchable and scanned documents', async () => {
+            await page.setViewportSize({ width: 1600, height: 1050 });
+            await page.goto('http://127.0.0.1:3100/dashboard/library');
+            await page.getByRole('heading', { name: 'Chat with docs & codes' }).waitFor();
+            await page.getByText('Choose documents', { exact: false }).click();
+            const scanned = page.getByRole('checkbox', { name: 'Nairobi Regularization of Unauthorized Developments Act 2025', exact: true });
+            assert.ok(await scanned.isDisabled());
+            await page.getByRole('button', { name: 'Clear selection', exact: true }).click();
+            assert.ok(await page.getByRole('button', { name: 'Send question' }).isDisabled());
+            await page.getByRole('checkbox', { name: 'National Building Code 2024', exact: true }).check();
+            await page.getByText('Choose documents', { exact: false }).click();
+        });
+        await test('Library searches real PDF text and displays page-specific links', async () => {
+            await page.getByRole('textbox', { name: 'Ask about Kenyan documents' }).fill('What does the building code say about stairways?');
+            const response = page.waitForResponse(r => r.url().endsWith('/api/library/chat') && r.request().method() === 'POST');
+            await page.getByRole('button', { name: 'Send question' }).click();
+            libraryAnswer = await (await response).json();
+            assert.ok(libraryAnswer.citations.length > 0);
+            assert.ok(libraryAnswer.citations.every(c => c.documentId === 'national-building-code-2024'));
+            const panel = page.getByRole('complementary', { name: 'Source passages' });
+            await panel.getByRole('link', { name: /Open PDF page/ }).first().waitFor();
+            assert.match(await panel.getByRole('link', { name: /Open PDF page/ }).first().getAttribute('href'), /#page=\d+$/);
+            await page.screenshot({ path: path.join(output, 'library-desktop.png'), fullPage: true });
+        });
+        await test('Cited answer buttons select the matching side-panel passage (mocked AI response)', async () => {
+            await page.route('**/api/library/chat', route => route.fulfill({ json: { ...libraryAnswer, mode: 'answer', notice: '', paragraphs: [{ text: 'Review the cited passage.', citations: [libraryAnswer.citations[0].id] }] } }));
+            await page.getByRole('textbox', { name: 'Ask about Kenyan documents' }).fill('Explain that passage');
+            await page.getByRole('button', { name: 'Send question' }).click();
+            await page.getByRole('button', { name: /\[1\] PDF p\./ }).click();
+            assert.match(await page.locator('[id^="library-source-"]').first().getAttribute('class'), /border-\[#92754a\]/);
+            await page.unroute('**/api/library/chat');
+        });
+        await test('Library API rejects unlisted documents and oversized questions', async () => {
+            const endpoint = 'http://127.0.0.1:3100/api/library/chat';
+            const invalid = await context.request.post(endpoint, { data: { question: 'stairs', documentIds: ['https://evil.example/private.pdf'] } });
+            assert.equal(invalid.status(), 400);
+            const oversized = await context.request.post(endpoint, { data: { question: 'x'.repeat(1501), documentIds: ['national-building-code-2024'] } });
+            assert.equal(oversized.status(), 400);
+            const scanned = await context.request.post(endpoint, { data: { question: 'requirements', documentIds: ['nairobi-regularization-unauthorized-developments-act-2025'] } });
+            assert.equal(scanned.status(), 400);
+            const anonymous = await browser.newContext();
+            const denied = await anonymous.request.post(endpoint, { maxRedirects: 0, data: { question: 'stairs', documentIds: ['national-building-code-2024'] } });
+            assert.ok([307, 401].includes(denied.status()));
+            if (denied.status() === 307) assert.ok(denied.headers().location.includes('/login'));
+            await anonymous.close();
+        });
+        await test('Library mobile navigation and new conversation', async () => {
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.getByRole('link', { name: 'Docs and codes library', exact: true }).waitFor();
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await page.screenshot({ path: path.join(output, 'library-mobile.png'), fullPage: true });
+            await page.getByRole('button', { name: 'New conversation' }).click();
+            assert.equal(await page.locator('[id^="library-source-"]').count(), 0);
+        });
         await test('No browser runtime errors', async () => assert.deepEqual(errors, []));
         fs.writeFileSync(path.join(output, 'report-browser.json'), JSON.stringify({ results, errors }, null, 2));
         if (results.some(r => r.status === 'failed')) process.exitCode = 1;
