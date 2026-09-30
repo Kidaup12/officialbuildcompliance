@@ -16,7 +16,6 @@ import { Plus, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createProject } from "@/lib/api"
-import { useRouter } from "next/navigation"
 import { useFolderStore } from "@/lib/store/folder-store"
 
 export function NewProjectModal() {
@@ -24,14 +23,13 @@ export function NewProjectModal() {
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const queryClient = useQueryClient()
-    const router = useRouter()
     const { activeFolder } = useFolderStore()
 
     const createProjectMutation = useMutation({
         mutationFn: async () => {
             return await createProject(name, description, activeFolder || undefined)
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["projects"] })
             setOpen(false)
             setName("")

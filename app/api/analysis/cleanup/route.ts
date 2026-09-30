@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { refundCredits, ANALYSIS_COST } from "@/lib/credits"
 
-export async function POST(request: Request) {
+export async function POST() {
     try {
         const supabase = await createClient()
         const { data: { user }, error: authError } = await supabase.auth.getUser()

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm, ControllerRenderProps } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldPath, type FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Eye, EyeOff } from "lucide-react";
@@ -18,12 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-interface AuthFormProps {
-    schema: z.ZodType<any, any, any>;
-    defaultValues: any;
-    onSubmit: (values: any) => Promise<void>;
+interface AuthFormProps<T extends FieldValues> {
+    schema: z.ZodType<T, T>;
+    defaultValues: DefaultValues<T>;
+    onSubmit: (values: T) => Promise<void>;
     fields: {
-        name: string;
+        name: FieldPath<T>;
         label: string;
         type: string;
         placeholder?: string;
@@ -33,7 +33,7 @@ interface AuthFormProps {
     className?: string;
 }
 
-export function AuthForm({
+export function AuthForm<T extends FieldValues>({
     schema,
     defaultValues,
     onSubmit,
@@ -41,8 +41,8 @@ export function AuthForm({
     submitText,
     isLoading,
     className,
-}: AuthFormProps) {
-    const form = useForm({
+}: AuthFormProps<T>) {
+    const form = useForm<T>({
         resolver: zodResolver(schema),
         defaultValues: defaultValues,
     });
@@ -65,11 +65,11 @@ export function AuthForm({
                             key={field.name}
                             control={form.control}
                             name={field.name}
-                            render={({ field: formField }: { field: ControllerRenderProps<any, any> }) => (
+                            render={({ field: formField }) => (
                                 <FormItem>
                                     <FormLabel>{field.label}</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
+                                    <div className="relative">
+                                        <FormControl>
                                             <Input
                                                 type={field.type === "password" && showPassword[field.name] ? "text" : field.type}
                                                 placeholder={field.placeholder}
@@ -77,22 +77,24 @@ export function AuthForm({
                                                 disabled={isLoading}
                                                 className={field.type === "password" ? "pr-10" : ""}
                                             />
-                                            {field.type === "password" && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => togglePasswordVisibility(field.name)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                                    disabled={isLoading}
-                                                >
-                                                    {showPassword[field.name] ? (
-                                                        <EyeOff className="h-4 w-4" />
-                                                    ) : (
-                                                        <Eye className="h-4 w-4" />
-                                                    )}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </FormControl>
+                                        </FormControl>
+                                        {field.type === "password" && (
+                                            <button
+                                                type="button"
+                                                aria-label={showPassword[field.name] ? `Hide ${field.label.toLowerCase()}` : `Show ${field.label.toLowerCase()}`}
+                                                aria-pressed={!!showPassword[field.name]}
+                                                onClick={() => togglePasswordVisibility(field.name)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                                disabled={isLoading}
+                                            >
+                                                {showPassword[field.name] ? (
+                                                    <EyeOff className="h-4 w-4" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4" />
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
                             )}

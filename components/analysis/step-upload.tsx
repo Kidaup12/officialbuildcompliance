@@ -7,7 +7,7 @@ import { useDropzone } from "react-dropzone"
 import { uploadBuildingPlan, getBuildingPlanUrl } from "@/lib/supabase/storage"
 
 interface StepUploadProps {
-    onFileSelect: (file: File, url: string) => void
+    onFileSelect: (file: File | undefined, url: string) => void
     selectedFile?: File
 }
 
@@ -67,7 +67,7 @@ export function StepUpload({ onFileSelect, selectedFile }: StepUploadProps) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onFileSelect(null as any, "")}
+                        onClick={() => onFileSelect(undefined, "")}
                         className="text-muted-foreground hover:text-foreground"
                     >
                         <X className="h-4 w-4" />

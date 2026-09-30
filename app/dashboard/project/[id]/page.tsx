@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query"
 import { getProject, getProjectAnalyses } from "@/lib/api"
 import { Loader2 } from "lucide-react"
 import { useParams, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 import { useRealtimeSubscription } from "@/hooks/use-realtime"
 
@@ -19,14 +19,15 @@ export default function ProjectPage() {
 
     useRealtimeSubscription(projectId)
 
-    // Check if we should auto-open the wizard
-    useEffect(() => {
-        if (searchParams.get("newAnalysis") === "true") {
-            setWizardOpen(true)
-            // Clean up the URL
-            window.history.replaceState({}, "", `/dashboard/project/${projectId}`)
+    const autoOpenWizard = searchParams.get("newAnalysis") === "true"
+    const handleWizardChange = (open: boolean) => {
+        setWizardOpen(open)
+        if (autoOpenWizard) {
+            const url = new URL(window.location.href)
+            url.searchParams.delete("newAnalysis")
+            window.history.replaceState({}, "", url.pathname + url.search)
         }
-    }, [searchParams, projectId])
+    }
 
     const { data: project, isLoading: isProjectLoading } = useQuery({
         queryKey: ["project", projectId],
@@ -69,7 +70,7 @@ export default function ProjectPage() {
                 <div className="mt-8 space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold tracking-tight">Analysis History</h2>
-                        <WizardDialog open={wizardOpen} onOpenChange={setWizardOpen} />
+                        <WizardDialog open={wizardOpen || autoOpenWizard} onOpenChange={handleWizardChange} />
                     </div>
 
                     <AnalysisTable
@@ -77,7 +78,6 @@ export default function ProjectPage() {
                         analyses={analyses?.map(a => ({
                             ...a,
                             createdAt: new Date(a.created_at),
-                            status: a.status as any // Cast to match UI type
                         })) || []}
                     />
                 </div>

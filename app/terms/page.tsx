@@ -29,7 +29,7 @@ export default function TermsPage() {
                         <h2 className="text-2xl font-semibold mb-4">2. Service Description</h2>
                         <p className="mb-4">
                             BPCA provides AI-powered building plan compliance analysis services. Our platform analyzes building plans against selected
-                            building codes and regulations to identify potential compliance issues. The service is provided "as is" and should be used
+                            building codes and regulations to identify potential compliance issues. The service is provided &quot;as is&quot; and should be used
                             as a supplementary tool, not as a replacement for professional architectural or legal advice.
                         </p>
                     </section>
@@ -97,7 +97,7 @@ export default function TermsPage() {
                             <li>Authorize automatic renewal unless you cancel before the renewal date</li>
                         </ul>
                         <p className="mb-4">
-                            We reserve the right to modify pricing with 30 days' notice to existing subscribers.
+                            We reserve the right to modify pricing with 30 days&apos; notice to existing subscribers.
                         </p>
                     </section>
 

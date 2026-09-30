@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.9",
+    "pdfjs-dist": "^6.3.289",
+    "playwright": "^1.63.0"
+  }
+}

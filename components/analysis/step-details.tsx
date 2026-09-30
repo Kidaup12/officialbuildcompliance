@@ -43,7 +43,7 @@ export function StepDetails({
                         className="min-h-[120px] resize-none"
                     />
                     <p className="text-xs text-muted-foreground">
-                        Help the AI understand what you're looking for in the compliance analysis.
+                        Help the AI understand what you&apos;re looking for in the compliance analysis.
                     </p>
                 </div>
 

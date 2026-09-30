@@ -16,15 +16,16 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { useState, useEffect } from "react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { combineReportPayloads } from "@/lib/report-model"
 
 interface Analysis {
     id: string
-    version: number
+    version_number: number
     status: "processing" | "completed" | "failed" | "waiting_for_selection"
     createdAt: Date
     score?: number
     violations?: number
-    pdf_url?: string
+    pdf_url?: string | null
 }
 
 interface AnalysisTableProps {
@@ -53,9 +54,9 @@ export function AnalysisTable({ analyses, projectId }: AnalysisTableProps) {
         }
 
         cleanupAnalyses()
-    }, [])
+    }, [router])
 
-    const getFileName = (url?: string) => {
+    const getFileName = (url?: string | null) => {
         if (!url) return "Unknown Document"
         try {
             const decoded = decodeURIComponent(url)
@@ -84,13 +85,14 @@ export function AnalysisTable({ analyses, projectId }: AnalysisTableProps) {
                 return
             }
 
-            const report = analysis.reports[0]
-            const jsonReport = report.json_report
-            const projectName = analysis.project_versions?.projects?.name || "Building Plan"
+            const jsonReport = combineReportPayloads(analysis.reports.map((report: { json_report: unknown }) => report.json_report))
+            const version = Array.isArray(analysis.project_versions) ? analysis.project_versions[0] : analysis.project_versions
+            const project = Array.isArray(version?.projects) ? version.projects[0] : version?.projects
+            const projectName = project?.name || "Building Plan"
 
             // Import PDF generator dynamically
             const { downloadComplianceReport } = await import("@/lib/pdf-generator")
-            downloadComplianceReport(jsonReport, projectName)
+            downloadComplianceReport(jsonReport, projectName, { analysis_id: analysisId })
         } catch (error) {
             console.error("Error downloading report:", error)
             alert("Failed to download report")

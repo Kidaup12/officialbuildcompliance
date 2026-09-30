@@ -1,6 +1,6 @@
 "use client"
 
-import { Folder, Plus, MoreVertical, Trash2, Edit2 } from "lucide-react"
+import { Folder, MoreVertical, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {

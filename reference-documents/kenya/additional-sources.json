@@ -1,0 +1,54 @@
+﻿[
+    {
+        "retrieved_on":  "2026-09-30",
+        "purpose":  "Standalone Fire Risk Reduction Rules 2007",
+        "error":  null,
+        "usage_note":  "Third-party mirror from Envosh Consultants; official Kenya Law downloads returned 403. Verify text against official publication before production use.",
+        "status":  "downloaded",
+        "source_url":  "https://envoshconsultants.co.ke/download/fire-risk-reduction-rules-2007/?wpdmdl=14137\u0026refresh=6abd4a7aab7e11790790266\u0026ind=1680031604080\u0026filename=Fire-Risk-Reduction-Rules-_-2007.pdf",
+        "file":  "fire-risk-reduction-rules-2007-mirror.pdf",
+        "bytes":  156809,
+        "sha256":  "82E6878840C86B295DD9E638A330D7C0C66DDD6CD049D42EC11E7613E775F78E"
+    },
+    {
+        "retrieved_on":  "2026-09-30",
+        "purpose":  "Public health, sanitation and drainage",
+        "error":  null,
+        "usage_note":  "Legislation as at 31 December 2022.",
+        "status":  "downloaded",
+        "source_url":  "https://new.kenyalaw.org/akn/ke/act/1921/38/eng%402022-12-31/source",
+        "file":  "public-health-act-2022-edition.pdf",
+        "bytes":  746868,
+        "sha256":  "6F17B77803C4E4F7838D1BF17169A3BE614964FDA0BA4636EDA07735C57B3BF4"
+    },
+    {
+        "sha256":  "31CD5B3C7AD3295EAE400FCBD0F99AB047D170DF9A04466AF1F784811E4B9200",
+        "bytes":  374194,
+        "purpose":  "Solar water heating requirements",
+        "retrieved_on":  "2026-09-30",
+        "usage_note":  "Source edition 2025-07-09.",
+        "status":  "downloaded",
+        "source_url":  "https://new.kenyalaw.org/akn/ke/act/ln/2025/115/eng%402025-07-09/source",
+        "file":  "solar-water-heating-regulations-2025.pdf"
+    },
+    {
+        "sha256":  "F68C04A9E1968AEAC27AD64D67CFF4C427BCF4874E213234A19ABB93E1AF4850",
+        "bytes":  529951,
+        "purpose":  "Construction registration and contractor requirements",
+        "retrieved_on":  "2026-09-30",
+        "usage_note":  "Source edition 2014-06-13; verify subsequent amendments.",
+        "status":  "downloaded",
+        "source_url":  "https://new.kenyalaw.org/akn/ke/act/ln/2014/74/eng%402014-06-13/source.pdf",
+        "file":  "national-construction-authority-regulations-2014.pdf"
+    },
+    {
+        "sha256":  "D6801ADC60DE55885F8C5C5614DB2F8CFF0A80A74D735A66C86B35DF3E753E72",
+        "bytes":  6233901,
+        "purpose":  "Regularization of unauthorized developments in Nairobi",
+        "retrieved_on":  "2026-09-30",
+        "usage_note":  "Assess eligibility and applicable time limits before use.",
+        "status":  "downloaded",
+        "source_url":  "https://nairobiassembly.go.ke/ncca/wp-content/uploads/act/2025/The-Nairobi-City-County-Regularization-of-Unauthorized-Developments-Act-2025.pdf",
+        "file":  "nairobi-regularization-unauthorized-developments-act-2025.pdf"
+    }
+]

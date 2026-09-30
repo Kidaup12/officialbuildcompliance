@@ -8,7 +8,6 @@ import {
     DialogTitle,
     DialogDescription,
     DialogFooter,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import { useState, useEffect } from "react"
 import { StepUpload } from "./step-upload"
@@ -43,11 +42,6 @@ export function WizardDialog({ open: controlledOpen, onOpenChange }: WizardDialo
     const [supabase] = useState(() => createClient())
     const router = useRouter()
 
-    // Fetch credits on mount
-    useEffect(() => {
-        fetchCredits()
-    }, [])
-
     // Use controlled open state if provided, otherwise use internal state
     const open = controlledOpen !== undefined ? controlledOpen : internalOpen
     const setOpen = (value: boolean) => {
@@ -58,18 +52,21 @@ export function WizardDialog({ open: controlledOpen, onOpenChange }: WizardDialo
         }
     }
 
-    const fetchCredits = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-            const { data } = await supabase
-                .from("user_credits")
-                .select("credits")
-                .eq("user_id", user.id)
-                .single()
+    useEffect(() => {
+        const fetchCredits = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data } = await supabase
+                    .from("user_credits")
+                    .select("credits")
+                    .eq("user_id", user.id)
+                    .single()
 
-            if (data) setCredits(data.credits)
+                if (data) setCredits(data.credits)
+            }
         }
-    }
+        void fetchCredits()
+    }, [supabase])
 
     const handleNewAnalysis = () => {
         if (credits !== null && credits < ANALYSIS_COST) {
@@ -79,7 +76,7 @@ export function WizardDialog({ open: controlledOpen, onOpenChange }: WizardDialo
         setOpen(true)
     }
 
-    const handleFileSelect = (uploadedFile: File, url: string) => {
+    const handleFileSelect = (uploadedFile: File | undefined, url: string) => {
         setFile(uploadedFile)
         setFileUrl(url)
     }
@@ -124,6 +121,7 @@ export function WizardDialog({ open: controlledOpen, onOpenChange }: WizardDialo
                     projectId,
                     fileUrl,
                     selectedCodes,
+                    documentName: file.name,
                     description: description || undefined,
                     pageNumbers: pageNumbers || undefined
                 })

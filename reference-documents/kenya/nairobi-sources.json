@@ -1,0 +1,22 @@
+﻿[
+    {
+        "sha256":  "8F0C260BF7CD0CD66B0809072FFE1045DE96CA2AE16FA96EE84FD40B2EF236D2",
+        "bytes":  6915386,
+        "purpose":  "Nairobi development control and zoning policy",
+        "retrieved_on":  "2026-09-30",
+        "usage_note":  "Official Assembly publication. Related report adoption approved 17 June 2026 per Assembly motions tracker. Gazette and parcel-specific applicability not independently verified.",
+        "status":  "downloaded",
+        "source_url":  "https://nairobiassembly.go.ke/ncca/wp-content/uploads/paperlaid/2026/NAIROBI-CITY-COUNTY-DEVELOPMENT-CONTROL-POLICY-2026-1.pdf",
+        "file":  "nairobi-development-control-policy-2026.pdf"
+    },
+    {
+        "sha256":  "9BC3FC87766343A1AB3DC44417C4E09376B151EE677460D7E8B931C6B7E6E5FE",
+        "bytes":  735231,
+        "purpose":  "Historical Nairobi zoning guide",
+        "retrieved_on":  "2026-09-30",
+        "usage_note":  "Legacy reference only. Do not mix its zoning parameters with the 2026 policy or assume current applicability.",
+        "status":  "downloaded",
+        "source_url":  "https://www.maarifa.cog.go.ke/sites/default/files/2025-08/A%20guide%20of%20Nairobi%20City%20Development%20Ordinances%20and%20Zones.pdf",
+        "file":  "nairobi-development-ordinances-zones-legacy-guide.pdf"
+    }
+]

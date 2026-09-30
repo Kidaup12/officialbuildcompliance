@@ -49,7 +49,7 @@ export default function AnalysisLoadingPage() {
                     filter: `id=eq.${analysisId}`
                 },
                 async (payload) => {
-                    const newStatus = (payload.new as any).status
+                    const newStatus: unknown = payload.new.status
 
                     if (newStatus === "completed") {
                         setCurrentStatus('completed')
@@ -60,8 +60,8 @@ export default function AnalysisLoadingPage() {
                         }, 2000)
                     } else if (newStatus === "failed") {
                         await fetchErrorAndFail()
-                    } else {
-                        setCurrentStatus(newStatus as any)
+                    } else if (newStatus === "uploading" || newStatus === "processing" || newStatus === "analyzing" || newStatus === "generating") {
+                        setCurrentStatus(newStatus)
                     }
                 }
             )
@@ -95,7 +95,7 @@ export default function AnalysisLoadingPage() {
             supabase.removeChannel(channel)
             clearInterval(pollInterval)
         }
-    }, [analysisId, projectId, router, supabase])
+    }, [analysisId, projectId, router, supabase, searchParams])
 
     return <LoadingScreen status={currentStatus} error={errorMessage} projectId={projectId} />
 }

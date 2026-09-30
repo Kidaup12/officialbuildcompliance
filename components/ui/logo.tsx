@@ -7,8 +7,6 @@ interface LogoProps {
 }
 
 export function Logo({ className, showText = true, variant = "default" }: LogoProps) {
-    const primaryColor = variant === "light" ? "white" : "currentColor"
-    const accentColor = "#F59E0B" // Construction amber/orange
 
     return (
         <div className={cn("flex items-center gap-2 font-bold text-xl tracking-tight", className)}>

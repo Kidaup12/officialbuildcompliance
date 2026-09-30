@@ -6,7 +6,8 @@ export async function createAnalysis(
     fileUrl: string,
     selectedCodes: string[],
     description?: string,
-    pageNumbers?: string
+    pageNumbers?: string,
+    documentName?: string
 ) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -52,7 +53,7 @@ export async function createAnalysis(
 
     // Trigger n8n workflow
     try {
-        await triggerAnalysisWorkflow(analysis.id, fileUrl, selectedCodes, description, pageNumbers)
+        await triggerAnalysisWorkflow(analysis.id, fileUrl, selectedCodes, description, pageNumbers, documentName)
     } catch (error) {
         // Update analysis status to failed if webhook trigger fails
         await supabase

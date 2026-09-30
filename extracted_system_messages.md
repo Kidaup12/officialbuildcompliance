@@ -1,5 +1,10 @@
 # Extracted System Messages
 
+> Historical workflow export. Superseded by `multi_code_compliance_prompt.md`
+> and the v2 contract in `lib/report-contract.ts`. Do not deploy the old formatter
+> below: it discards non-Regulation clauses and citation/evidence fields. Update
+> the hosted extraction, compliance and formatting nodes using the v2 instructions.
+
 ## 1. Compliance Check (OpenAI Node)
 **Role:** System
 

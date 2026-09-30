@@ -1,0 +1,52 @@
+﻿[
+    {
+        "file":  "national-building-code-2024.pdf",
+        "source_url":  "https://www.nca.go.ke/media/LN47_2024_NCAA-National_Building_Code_2024_1.pdf",
+        "purpose":  "Primary technical building-plan requirements",
+        "status":  "downloaded",
+        "error":  null,
+        "retrieved_on":  "2026-09-30",
+        "bytes":  8024064,
+        "sha256":  "F2116CFDCA28B44EA1278A7759A48D44956B10A5A65B73F3024A365DFA280FC7"
+    },
+    {
+        "file":  "physical-and-land-use-planning-act.pdf",
+        "source_url":  "https://new.kenyalaw.org/akn/ke/act/2019/13/eng%402022-12-31/source",
+        "purpose":  "Development permission and planning framework; source edition 2022-12-31",
+        "status":  "downloaded",
+        "error":  null,
+        "retrieved_on":  "2026-09-30",
+        "bytes":  472975,
+        "sha256":  "DF29572D2EEC2E1F561FC7B678A3342C42813DADF897513378FD715AA458DD92"
+    },
+    {
+        "file":  "development-permission-control-regulations-2021.pdf",
+        "source_url":  "https://new.kenyalaw.org/akn/ke/act/ln/2021/253/eng%402021-12-10/source.pdf",
+        "purpose":  "National development permission procedures",
+        "status":  "downloaded",
+        "error":  null,
+        "retrieved_on":  "2026-09-30",
+        "bytes":  631696,
+        "sha256":  "F33404EC625EE7B2439372DEFB149F7E49B453ABACE17875F91C7BA2F7F27AA9"
+    },
+    {
+        "file":  "persons-with-disabilities-act-2025.pdf",
+        "source_url":  "https://new.kenyalaw.org/akn/ke/act/2025/4/eng%402025-05-13/source",
+        "purpose":  "Accessibility obligations",
+        "status":  "downloaded",
+        "error":  null,
+        "retrieved_on":  "2026-09-30",
+        "bytes":  504929,
+        "sha256":  "896F77214DA0143C357C8CF070951C60C987435EE6E5AC8D529DA0792385D133"
+    },
+    {
+        "file":  "environmental-assessment-audit-regulations-2025.pdf",
+        "source_url":  "https://nema.go.ke/wp-content/uploads/2025/11/Strategic-and-Integrated-Environmental-Assessments-and-Environmental-Audits-Regulations-2025-1-min.pdf",
+        "purpose":  "Environmental assessment and audit procedures",
+        "status":  "downloaded",
+        "error":  null,
+        "retrieved_on":  "2026-09-30",
+        "bytes":  2269373,
+        "sha256":  "88A87BBF2FDF78752FF1A3530609A4BF0D7B2343A967F79CC8029136321EF1C2"
+    }
+]

@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
+import type { User } from "@supabase/supabase-js"
 import { createAnalysis } from "@/lib/analysis"
 import { createClient } from "@/lib/supabase/server"
 import { hasEnoughCredits, deductCredits, refundCredits, ANALYSIS_COST } from "@/lib/credits"
 
 export async function POST(request: Request) {
-    let user: any = null
+    let user: User | null = null
     let creditsDeducted = false
 
     try {
-        const { projectId, fileUrl, selectedCodes, description, pageNumbers } = await request.json()
+        const { projectId, fileUrl, selectedCodes, description, pageNumbers, documentName } = await request.json()
 
-        if (!projectId || !fileUrl || !selectedCodes) {
+        if (!projectId || !fileUrl || !Array.isArray(selectedCodes) || selectedCodes.length === 0 || selectedCodes.length > 30 || selectedCodes.some(code => typeof code !== 'string' || !code.trim() || code.length > 120) || (documentName !== undefined && (typeof documentName !== 'string' || documentName.length > 255)) || (pageNumbers !== undefined && (typeof pageNumbers !== 'string' || pageNumbers.length > 500))) {
             return NextResponse.json(
                 { error: "Missing required fields" },
                 { status: 400 }
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
         // Get current user
         const supabase = await createClient()
         const { data: authData, error: authError } = await supabase.auth.getUser()
-        user = authData?.user
+        user = authData?.user ?? null
 
         if (authError || !user) {
             return NextResponse.json(
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
         }
         creditsDeducted = true
 
-        const analysis = await createAnalysis(projectId, fileUrl, selectedCodes, description, pageNumbers)
+        const analysis = await createAnalysis(projectId, fileUrl, selectedCodes, description, pageNumbers, documentName)
 
         return NextResponse.json({
             analysisId: analysis.id,
@@ -71,7 +72,8 @@ export async function POST(request: Request) {
             }
         }
 
-        const errorMessage = error instanceof Error ? error.message : (error as any)?.message || "Unknown error"
+        const errorMessage = typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
+            ? error.message : "Unknown error"
         return NextResponse.json(
             {
                 error: "Failed to create analysis",

@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, User, LogOut, Home, MessageSquare, Mail } from "lucide-react"
+import { Search, LogOut, MessageSquare, Mail } from "lucide-react"
 import { FeedbackDialog } from "@/components/feedback-dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,47 +15,45 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ANALYSIS_COST } from "@/lib/constants"
 
 
 export function TopBar() {
     const router = useRouter()
-    const pathname = usePathname()
-    const supabase = createClient()
+    const [supabase] = useState(createClient)
     const [userEmail, setUserEmail] = useState<string>("")
     const [userName, setUserName] = useState<string>("")
     const [credits, setCredits] = useState<number | null>(null)
     const [feedbackOpen, setFeedbackOpen] = useState(false)
 
     useEffect(() => {
-        loadUser()
-    }, [])
+        const loadUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                setUserEmail(user.email || "")
+                // Extract name from email (before @) or use user metadata if available
+                const name = user.user_metadata?.full_name ||
+                    user.user_metadata?.name ||
+                    user.email?.split('@')[0] ||
+                    "User"
+                setUserName(name)
 
-    const loadUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-            setUserEmail(user.email || "")
-            // Extract name from email (before @) or use user metadata if available
-            const name = user.user_metadata?.full_name ||
-                user.user_metadata?.name ||
-                user.email?.split('@')[0] ||
-                "User"
-            setUserName(name)
+                // Fetch user credits
+                const { data: creditsData } = await supabase
+                    .from("user_credits")
+                    .select("credits")
+                    .eq("user_id", user.id)
+                    .single()
 
-            // Fetch user credits
-            const { data: creditsData } = await supabase
-                .from("user_credits")
-                .select("credits")
-                .eq("user_id", user.id)
-                .single()
-
-            if (creditsData) {
-                setCredits(creditsData.credits)
+                if (creditsData) {
+                    setCredits(creditsData.credits)
+                }
             }
         }
-    }
+        void loadUser()
+    }, [supabase])
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()

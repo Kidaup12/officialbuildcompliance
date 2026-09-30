@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
-import { Loader2 } from "lucide-react"
 
 export function PageLoadingIndicator() {
     const pathname = usePathname()
-    const [loading, setLoading] = useState(false)
+    return <RouteLoadingIndicator key={pathname} />
+}
+
+function RouteLoadingIndicator() {
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        setLoading(true)
         const timeout = setTimeout(() => setLoading(false), 300)
         return () => clearTimeout(timeout)
-    }, [pathname])
+    }, [])
 
     if (!loading) return null
 

@@ -1,3 +1,5 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
 export interface Database {
     public: {
         Tables: {
@@ -155,21 +157,21 @@ export interface Database {
                 Row: {
                     id: string
                     analysis_id: string
-                    json_report: any | null
+                    json_report: Json | null
                     annotated_pdf_url: string | null
                     created_at: string
                 }
                 Insert: {
                     id?: string
                     analysis_id: string
-                    json_report?: any | null
+                    json_report?: Json | null
                     annotated_pdf_url?: string | null
                     created_at?: string
                 }
                 Update: {
                     id?: string
                     analysis_id?: string
-                    json_report?: any | null
+                    json_report?: Json | null
                     annotated_pdf_url?: string | null
                     created_at?: string
                 }

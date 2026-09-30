@@ -15,7 +15,7 @@ export default function DashboardLayout({
                 <aside className="w-64 hidden md:block">
                     <FoldersPanel className="h-full" />
                 </aside>
-                <main className="flex-1 overflow-auto">
+                <main className="min-w-0 flex-1 overflow-auto">
                     {children}
                 </main>
             </div>

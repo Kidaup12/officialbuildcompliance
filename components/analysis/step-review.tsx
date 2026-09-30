@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { FileText, Check, AlertTriangle } from "lucide-react"
 
 interface StepReviewProps {
@@ -77,7 +76,7 @@ export function StepReview({ file, selectedCodes, description, pageNumbers }: St
                             Analysis Estimate
                         </p>
                         <p className="text-xs text-blue-600/80 dark:text-blue-400/80">
-                            This analysis will take approximately 2-5 minutes to complete. You will be notified when it's ready.
+                            This analysis will take approximately 2-5 minutes to complete. You will be notified when it&apos;s ready.
                         </p>
                     </div>
                 </div>

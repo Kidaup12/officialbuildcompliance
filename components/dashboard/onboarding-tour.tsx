@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useSyncExternalStore } from "react"
 import { useOnboardingStore } from "@/lib/store/onboarding-store"
 import { Button } from "@/components/ui/button"
 import {
@@ -41,13 +41,16 @@ const STEPS = [
     },
 ]
 
+const subscribe = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
+
 export function OnboardingTour() {
     const { isOpen, currentStep, nextStep, prevStep, closeTour, hasSeenOnboarding, startTour } = useOnboardingStore()
-    const [mounted, setMounted] = useState(false)
+    const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
 
     // Handle initial auto-start
     useEffect(() => {
-        setMounted(true)
         if (!hasSeenOnboarding) {
             // Small delay to ensure UI is ready
             const timer = setTimeout(() => {
@@ -61,31 +64,6 @@ export function OnboardingTour() {
 
     const step = STEPS[currentStep]
     const isLastStep = currentStep === STEPS.length - 1
-
-    // Calculate position (simplified for this MVP - mostly centered or fixed relative to viewport for robustness)
-    // For a truly robust positioning, we'd use something like floating-ui, but for this "guided 4 step" request,
-    // a centered modal or simple absolute positioning often works best for non-tech users to avoid confusion.
-    // Let's stick to a centered overlay for steps 1 & 4, and a "spotlight" style or just a positioned card for others.
-
-    // Actually, to make it really simple and robust:
-    // We will render a fixed overlay with a "spotlight" effect if possible, or just a nice card in the center/corner.
-    // Given the "non-tech savvy" requirement, a clear, centered dialog that points to things is often better than jumping UI.
-    // Let's try to position it near the target if it's not "body".
-
-    const getPositionStyles = () => {
-        if (step.target === "body") {
-            return "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        }
-
-        // Simple positioning logic based on target
-        // In a real app we'd measure rects. For now, let's use fixed positions that we know work for the layout.
-        // This is a bit brittle but fits the "MVP" constraint. 
-        // BETTER APPROACH: Just center it for all steps but highlight the area? 
-        // OR: Use a library. But I committed to custom.
-        // Let's stick to Centered for simplicity and clarity, maybe adding a "Look here ->" indicator if needed.
-        // Actually, let's just center it. It's the most "guided" and least buggy experience without a heavy library.
-        return "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-    }
 
     return (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">

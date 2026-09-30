@@ -1,0 +1,9 @@
+﻿{
+    "store_url":  "https://webstore.kebs.go.ke/",
+    "sector_url":  "https://standards.kebs.go.ke/sectors/",
+    "usage_note":  "Select the standards and Kenyan National Annexes referenced by the applicable building code and engineering design. Confirm editions and licensing before acquisition.",
+    "checked_on":  "2026-09-30",
+    "reason":  "The previously supplied link is a sector directory, not a standards PDF. The official catalogue lists standards for purchase; no licensed copies were obtained.",
+    "category":  "KEBS structural standards and Kenyan-adopted Eurocodes",
+    "status":  "not_downloaded"
+}

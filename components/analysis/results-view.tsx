@@ -1,441 +1,126 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { PDFViewer } from "./pdf-viewer"
-import { ViolationsSidebar } from "./violations-sidebar"
-import { ScoreCard } from "./score-card"
-import { Button } from "@/components/ui/button"
-import { X, Download, Share2, Loader2 } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { downloadComplianceReport, generateComplianceReport } from "@/lib/pdf-generator"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Download, Loader2, Share2, FileText, DraftingCompass } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import { generateComplianceReport, downloadComplianceReport } from '@/lib/pdf-generator'
+import { combineReportPayloads, normalizeReport, reportMetrics } from '@/lib/report-model'
+import type { NormalizedReport } from '@/types/report'
+import { ViolationsSidebar } from './violations-sidebar'
+import { PDFViewer } from './pdf-viewer'
 
-interface Violation {
-    id: string
-    title: string
-    description: string
-    severity: "critical" | "warning" | "info"
-    code: string
-    page: number
-    x: string
-    y: string
-    required?: string
-    proposed?: string
-    recommendation?: string | Record<string, string>
-    page_assessed?: string
-    object_on_plan?: string
-}
-
-interface ReportData {
-    score: number
-    violations: Violation[]
-    totalViolations: number
-    criticalViolations: number
-    originalPdfUrl?: string
-    pdfUrl?: string
-    annotatedPdfUrl?: string
-}
-
-interface ResultsViewProps {
-    analysisId: string
-}
-
-export function ResultsView({ analysisId }: ResultsViewProps) {
+export function ResultsView({ analysisId }: { analysisId: string }) {
     const router = useRouter()
-    const supabase = createClient()
-    const [selectedViolationId, setSelectedViolationId] = useState<string>()
-    const [reportData, setReportData] = useState<ReportData | null>(null)
-    const [rawJsonReport, setRawJsonReport] = useState<any>(null)
-    const [projectName, setProjectName] = useState<string>("Building Plan")
-    const [projectId, setProjectId] = useState<string | null>(null)
+    const [supabase] = useState(createClient)
+    const [report, setReport] = useState<NormalizedReport | null>(null)
+    const [raw, setRaw] = useState<unknown>(null)
+    const [projectName, setProjectName] = useState('Building Plan')
+    const [projectId, setProjectId] = useState<string>()
+    const [originalUrl, setOriginalUrl] = useState<string>()
+    const [reportUrl, setReportUrl] = useState<string>()
+    const [error, setError] = useState<string>()
+    const [notice, setNotice] = useState<string>()
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [pdfView, setPdfView] = useState<'report' | 'original'>('report')
-    const [generatedReportUrl, setGeneratedReportUrl] = useState<string | null>(null)
-
-    const [status, setStatus] = useState<"processing" | "completed" | "failed" | "waiting_for_selection">("processing")
-    const [pollingAttempts, setPollingAttempts] = useState(0)
-    const pollingAttemptsRef = useRef(0) // Track attempts synchronously
-    const MAX_POLLING_ATTEMPTS = 60 // 5 minutes at 5s interval (analyses typically take 3-4 mins)
+    const [view, setView] = useState<'report' | 'original'>('report')
+    const [selectedId, setSelectedId] = useState<string>()
+    const [drawingPage, setDrawingPage] = useState<number>()
+    const [generatedAt, setGeneratedAt] = useState<string>()
 
     useEffect(() => {
-        console.log(`[ResultsView] Starting polling with ${MAX_POLLING_ATTEMPTS} max attempts (${MAX_POLLING_ATTEMPTS * 5 / 60} minutes)`)
-        let intervalId: NodeJS.Timeout
-
-        const checkStatus = async () => {
+        let cancelled = false
+        let timer: ReturnType<typeof setTimeout> | undefined
+        let blobUrl: string | undefined
+        let attempts = 0
+        let hasReport = false
+        let lastPayload = ''
+        const poll = async () => {
             try {
-                const { data: analysis, error: analysisError } = await supabase
-                    .from("analyses")
-                    .select("status, pdf_url, reports(*), project_versions(projects(name), project_id)")
-                    .eq("id", analysisId)
-                    .single()
-
-                if (analysisError) throw analysisError
-
-                if (!analysis) {
-                    throw new Error("Analysis not found")
-                }
-
-                // Update project info if available
-                // Handle project_versions being potentially an array or object depending on Supabase return type
-                const projectVersion = Array.isArray(analysis.project_versions)
-                    ? analysis.project_versions[0]
-                    : analysis.project_versions
-
-                const project = Array.isArray(projectVersion?.projects)
-                    ? projectVersion.projects[0]
-                    : projectVersion?.projects
-
-                if (project?.name) {
-                    setProjectName(project.name)
-                }
-                if (projectVersion?.project_id) {
-                    setProjectId(projectVersion.project_id)
-                }
-
-                setStatus(analysis.status)
-
-                if (analysis.status === 'completed') {
-                        processReport(analysis.reports[0], analysis.pdf_url)
-                        setLoading(false)
-                        return true // Stop polling
-                    } else {
-                        // Status is completed but report not ready? Keep polling or error?
-                        // Usually they should be atomic, but let's be safe
-                        console.warn("Analysis completed but report not found yet")
+                const { data, error: queryError } = await supabase.from('analyses')
+                    .select('status, pdf_url, reports(*), project_versions(projects(name), project_id)')
+                    .eq('id', analysisId).single()
+                if (cancelled) return
+                if (queryError) throw queryError
+                if (!data) throw new Error('Analysis not found')
+                const version = Array.isArray(data.project_versions) ? data.project_versions[0] : data.project_versions
+                const project = Array.isArray(version?.projects) ? version.projects[0] : version?.projects
+                setProjectName(project?.name || 'Building Plan')
+                setProjectId(version?.project_id)
+                setOriginalUrl(data.pdf_url ?? undefined)
+                if (data.status === 'failed') { setError('The analysis failed. Please return to the project and try again.'); setLoading(false); return }
+                if (data.status === 'completed' && data.reports?.length) {
+                    const payload = combineReportPayloads(data.reports.map((row: { json_report: unknown }) => row.json_report))
+                    const signature = JSON.stringify(payload)
+                    const normalized = normalizeReport(payload)
+                    const missingCodes = normalized.context.selected_codes?.some(code => !normalized.findings.some(f => f.code_id === code))
+                    if (signature !== lastPayload) {
+                        const created = new Date().toISOString()
+                        const pdf = generateComplianceReport(payload, project?.name || 'Building Plan', { analysis_id: analysisId, generated_at: created })
+                        const nextUrl = URL.createObjectURL(pdf.output('blob'))
+                        if (blobUrl) URL.revokeObjectURL(blobUrl)
+                        blobUrl = nextUrl
+                        setRaw(payload); setReport(normalized); setReportUrl(nextUrl); setGeneratedAt(created)
+                        setSelectedId(current => normalized.findings.some(f => f.id === current) ? current : normalized.findings[0]?.id)
+                        lastPayload = signature
                     }
-                } else if (analysis.status === 'failed') {
-                    setError("Analysis failed. Please try again or contact support.")
+                    hasReport = true
                     setLoading(false)
-                    return true // Stop polling
+                    if (!missingCodes) { setNotice(undefined); return }
+                    setNotice('Some selected codes have no attributable results yet. Checking for additional workflow outputs…')
                 }
-
-                return false // Continue polling
             } catch (err) {
-                console.error("Error checking status:", err)
-                // Don't stop polling on transient network errors, but maybe count them?
-                return false
+                console.error('Unable to load analysis report:', err)
             }
-        }
-
-        const startPolling = async () => {
-            setLoading(true)
-            // Initial check
-            const shouldStop = await checkStatus()
-            if (shouldStop) return
-
-            intervalId = setInterval(async () => {
-                // Increment using ref for synchronous access
-                pollingAttemptsRef.current += 1
-                setPollingAttempts(pollingAttemptsRef.current)
-
-                // Check if we've exceeded the timeout
-                if (pollingAttemptsRef.current >= MAX_POLLING_ATTEMPTS) {
-                    clearInterval(intervalId)
-                    setError("Analysis timed out after 5 minutes. The backend may have failed. Please try again or contact support.")
-                    setLoading(false)
-                    return
-                }
-
-                const stop = await checkStatus()
-                if (stop) {
-                    clearInterval(intervalId)
-                }
-            }, 5000)
-        }
-
-        startPolling()
-
-        return () => {
-            if (intervalId) clearInterval(intervalId)
-        }
-    }, [analysisId])
-
-    const processReport = (report: any, originalPdfUrl?: string) => {
-        try {
-            const jsonReport = report.json_report
-            setRawJsonReport(jsonReport)
-
-            // Generate PDF URL for report view
-            try {
-                const doc = generateComplianceReport(jsonReport, projectName)
-                const blob = doc.output('blob')
-                const url = URL.createObjectURL(blob)
-                setGeneratedReportUrl(url)
-            } catch (e) {
-                console.error("Failed to generate report PDF:", e)
+            if (cancelled) return
+            attempts += 1
+            if (attempts >= 60) {
+                if (hasReport) setNotice('Some selected codes remain incomplete. Review the scope qualifications in the report.')
+                else { setError('The report was not available after five minutes. Return to the project and try again.'); setLoading(false) }
+                return
             }
-
-            const violations: Violation[] = [];
-            let complianceScore = 0;
-
-            // Extract score from summary if available
-            if (jsonReport.summary && typeof jsonReport.summary.compliance_score === 'number') {
-                complianceScore = jsonReport.summary.compliance_score;
-            } else {
-                // Calculate score based on compliant vs total items
-                let totalItems = 0;
-                let compliantItems = 0;
-
-                Object.entries(jsonReport).forEach(([key, value]: [string, any]) => {
-                    if (key === 'summary' || key === 'disclaimer') return;
-                    if (typeof value === 'object' && value !== null) {
-                        totalItems++;
-                        if (value.compliant === true) compliantItems++;
-                    }
-                });
-
-                complianceScore = totalItems > 0 ? Math.round((compliantItems / totalItems) * 100) : 0;
-            }
-
-            // Iterate over all keys to find regulations/codes
-            Object.entries(jsonReport).forEach(([key, value]: [string, any], index) => {
-                // Skip summary and disclaimer
-                if (key === 'summary' || key === 'disclaimer') return;
-
-                // Check if it's a regulation object (has 'compliant' field)
-                if (typeof value === 'object' && value !== null && 'compliant' in value) {
-                    // Only add if it's NOT compliant (false or null)
-                    if (value.compliant === false || value.compliant === null) {
-
-                        // Determine severity
-                        let severity: "critical" | "warning" | "info" = "warning";
-                        if (value.severity === "CRITICAL" || value.severity === "High") severity = "critical";
-                        else if (value.severity === "Medium") severity = "warning";
-                        else if (value.severity === "Low") severity = "info";
-
-                        // Determine title
-                        const title = key; // Use the key (e.g., "IBC 1011.5.2") as the title
-
-                        // Determine description
-                        const description = value.comment || value.description || "No details provided";
-
-                        // Handle proposed value which can be string or object
-                        let proposed = "";
-                        if (typeof value.proposed === 'string') {
-                            proposed = value.proposed;
-                        } else if (typeof value.proposed === 'object' && value.proposed !== null) {
-                            proposed = Object.entries(value.proposed)
-                                .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
-                                .join('\n');
-                        }
-
-                        violations.push({
-                            id: `violation-${index}`,
-                            title,
-                            description,
-                            severity,
-                            code: key,
-                            page: 1, // Default to page 1 as we don't have page info in this format
-                            x: "50%",
-                            y: "50%",
-                            required: value.required,
-                            proposed: proposed,
-                            recommendation: value.recommendation,
-                            page_assessed: value.page_assessed,
-                            object_on_plan: value.object_on_plan
-                        });
-                    }
-                }
-            });
-
-            const criticalCount = violations.filter(v => v.severity === "critical").length
-
-            setReportData({
-                score: complianceScore,
-                violations,
-                totalViolations: violations.length,
-                criticalViolations: criticalCount,
-                originalPdfUrl: originalPdfUrl,
-                pdfUrl: report.annotated_pdf_url || originalPdfUrl, // Fallback to original if no annotated
-                annotatedPdfUrl: report.annotated_pdf_url
-            })
-        } catch (err) {
-            console.error("Error processing report:", err)
-            setError("Failed to process report data")
+            timer = setTimeout(poll, 5000)
         }
-    }
+        void poll()
+        return () => { cancelled = true; if (timer) clearTimeout(timer); if (blobUrl) URL.revokeObjectURL(blobUrl) }
+    }, [analysisId, supabase])
 
-    const handleShare = async () => {
-        try {
-            await navigator.clipboard.writeText(window.location.href)
-            alert("Link copied to clipboard!")
-        } catch (err) {
-            console.error("Failed to copy link:", err)
-        }
-    }
-
-    const handleExport = () => {
-        if (rawJsonReport) {
-            downloadComplianceReport(rawJsonReport, projectName)
-        } else {
-            alert("Report data not available")
-        }
-    }
-
-    const [sidebarWidth, setSidebarWidth] = useState(400)
-    const isResizing = useRef(false)
-
-    const startResizing = (e: React.MouseEvent) => {
-        e.preventDefault()
-        isResizing.current = true
-        document.body.style.cursor = 'col-resize'
-        document.body.style.userSelect = 'none'
-
-        const handleMouseMove = (e: MouseEvent) => {
-            const newWidth = window.innerWidth - e.clientX
-            if (newWidth > 300 && newWidth < 1200) { // Increased max width
-                setSidebarWidth(newWidth)
-            }
-        }
-
-        const stopResizing = () => {
-            isResizing.current = false
-            document.body.style.cursor = ''
-            document.body.style.userSelect = ''
-            document.removeEventListener('mousemove', handleMouseMove)
-            document.removeEventListener('mouseup', stopResizing)
-        }
-
-        document.addEventListener('mousemove', handleMouseMove)
-        document.addEventListener('mouseup', stopResizing)
-    }
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="text-center space-y-4">
-                    <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-                    <h2 className="text-xl font-semibold">Analyzing Building Plan</h2>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                        This usually takes about 3 minutes. Please don't close this tab.
-                        We'll notify you when it's ready.
-                    </p>
-                    {pollingAttempts > 12 && (
-                        <p className="text-xs text-muted-foreground animate-pulse">
-                            Still working on it... ({Math.floor(pollingAttempts * 5 / 60)}m elapsed)
-                        </p>
-                    )}
-                </div>
-            </div>
-        )
-    }
-
-    if (error) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="text-center space-y-4 max-w-md">
-                    <div className="text-6xl">⚠️</div>
-                    <h2 className="text-2xl font-bold">Error Loading Results</h2>
-                    <p className="text-muted-foreground">{error}</p>
-                    <Button onClick={() => projectId ? router.push(`/dashboard/project/${projectId}`) : router.push('/dashboard')}>
-                        <X className="mr-2 h-4 w-4" />
-                        Close
-                    </Button>
-                </div>
-            </div>
-        )
-    }
-
-    if (!reportData) {
-        return null
-    }
+    const close = () => router.push(projectId ? `/dashboard/project/${projectId}` : '/dashboard')
+    const metrics = report ? reportMetrics(report) : null
+    if (loading) return <div className="flex h-screen items-center justify-center bg-stone-50"><div className="text-center space-y-4"><Loader2 className="mx-auto h-8 w-8 animate-spin text-stone-500" /><h1 className="font-serif text-2xl">Preparing your review</h1><p className="text-sm text-stone-500">Gathering findings and document references.</p></div></div>
+    if (error) return <div className="flex h-screen items-center justify-center"><div className="max-w-md space-y-4 p-6"><h1 className="font-serif text-2xl">Report unavailable</h1><p>{error}</p><Button onClick={close}>Return to project</Button></div></div>
+    if (!report || !metrics) return null
 
     return (
-        <div className="flex flex-col h-screen bg-background">
-            {/* Header */}
-            <div className="h-16 border-b flex items-center justify-between px-6 bg-background/95 backdrop-blur z-10 print:hidden">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => projectId ? router.push(`/dashboard/project/${projectId}`) : router.push('/dashboard')}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="font-semibold">Analysis Results</h1>
-                        <p className="text-xs text-muted-foreground">
-                            Score: {reportData.score}% • {reportData.totalViolations} Issues
-                        </p>
-                    </div>
+        <div className="flex h-full min-h-0 flex-col bg-[#eeeee8] text-stone-800">
+            <header className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 bg-[#fafaf6] px-6 py-4">
+                <div className="flex min-w-0 items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={close} aria-label="Return to project"><ArrowLeft className="h-4 w-4" /></Button>
+                    <div><p className="text-[10px] uppercase tracking-[0.24em] text-stone-500">JengaCheck / Compliance review</p><h1 className="font-serif text-xl">{projectName}</h1></div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleShare}>
-                        <Share2 className="mr-2 h-4 w-4" /> Share
-                    </Button>
-                    <Button size="sm" onClick={handleExport}>
-                        <Download className="mr-2 h-4 w-4" /> Export Report
-                    </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={async () => {
+                        try { await navigator.clipboard.writeText(window.location.href); setNotice('Report link copied. Recipients must have access to this project.') }
+                        catch { setNotice('Unable to copy the link. Copy the address from your browser.') }
+                    }}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+                    <Button size="sm" className="bg-stone-800 text-white hover:bg-stone-700" onClick={() => downloadComplianceReport(raw, projectName, { analysis_id: analysisId, generated_at: generatedAt })}><Download className="mr-2 h-4 w-4" />Download report</Button>
+                </div>
+            </header>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-[#fafaf6] px-6 py-3 text-xs">
+                <div className="flex flex-wrap gap-5"><span><strong>{metrics.failed}</strong> action required</span><span><strong>{metrics.pending}</strong> not assessed</span><span><strong>{metrics.passed}</strong> meets requirement</span><span className="text-stone-500">{metrics.cited}/{metrics.total} references complete</span></div>
+                <div className="flex rounded border border-stone-300 p-1">
+                    <Button size="sm" variant={view === 'report' ? 'secondary' : 'ghost'} aria-pressed={view === 'report'} onClick={() => setView('report')}><FileText className="mr-2 h-3 w-3" />Report</Button>
+                    <Button size="sm" variant={view === 'original' ? 'secondary' : 'ghost'} aria-pressed={view === 'original'} onClick={() => setView('original')} disabled={!originalUrl}><DraftingCompass className="mr-2 h-3 w-3" />Drawing{drawingPage ? ` · ${drawingPage}` : ''}</Button>
                 </div>
             </div>
-
-            <div className="flex flex-1 overflow-hidden">
-                {/* Main Content - PDF Viewer */}
-                <div className="flex-1 relative min-w-0">
-                    <div className="absolute top-4 left-4 z-10 w-64">
-                        <ScoreCard
-                            score={reportData.score}
-                            totalViolations={reportData.totalViolations}
-                            criticalViolations={reportData.criticalViolations}
-                        />
-                    </div>
-
-                    {/* PDF View Toggle */}
-                    <div className="absolute top-4 right-4 z-10">
-                        <div className="bg-background/95 backdrop-blur border rounded-lg p-1 flex gap-1 shadow-sm">
-                            <Button
-                                variant={pdfView === 'report' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setPdfView('report')}
-                                className="text-xs"
-                            >
-                                📄 Report View
-                            </Button>
-                            <Button
-                                variant={pdfView === 'original' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setPdfView('original')}
-                                className="text-xs"
-                            >
-                                🏗️ Original Plan
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* PDF Viewer */}
-                    {pdfView === 'report' && generatedReportUrl ? (
-                        <div className="w-full h-full bg-muted/30">
-                            <iframe
-                                src={`${generatedReportUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                                className="w-full h-full"
-                                title="Compliance Report"
-                            />
-                        </div>
-                    ) : (
-                        <PDFViewer
-                            url={pdfView === 'original' ? (reportData.originalPdfUrl || "/mock-plan.pdf") : (reportData.annotatedPdfUrl || reportData.pdfUrl || "/mock-plan.pdf")}
-                            violations={reportData.violations}
-                            selectedViolationId={selectedViolationId}
-                        />
-                    )}
+            {notice && <p role="status" className="border-b border-stone-200 bg-stone-100 px-6 py-2 text-xs text-stone-600">{notice}</p>}
+            <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+                <div className="min-h-[340px] min-w-0 flex-1">
+                    {view === 'report' && reportUrl ? <iframe src={`${reportUrl}#view=FitH&toolbar=0&navpanes=0`} title="Compliance review PDF" className="h-full min-h-[340px] w-full" /> : originalUrl ? <PDFViewer url={originalUrl} page={drawingPage} /> : <p className="p-8">Original drawing unavailable.</p>}
                 </div>
-
-                {/* Resizer Handle */}
-                <div
-                    className="w-1 bg-border hover:bg-primary cursor-col-resize transition-colors z-20 flex items-center justify-center group"
-                    onMouseDown={startResizing}
-                >
-                    <div className="h-8 w-1 bg-muted-foreground/20 group-hover:bg-primary rounded-full" />
-                </div>
-
-                {/* Sidebar - Violations */}
-                <div
-                    className="border-l bg-background flex-shrink-0"
-                    style={{ width: sidebarWidth }}
-                >
-                    <ViolationsSidebar
-                        violations={reportData.violations}
-                        onSelectViolation={setSelectedViolationId}
-                        selectedViolationId={selectedViolationId}
-                    />
-                </div>
+                <aside className="h-[45vh] shrink-0 lg:h-full lg:w-[420px] xl:w-[460px]">
+                    <ViolationsSidebar report={report} selectedFindingId={selectedId} onSelectFinding={setSelectedId} onOpenDrawing={originalUrl ? page => { setDrawingPage(page); setView('original') } : undefined} />
+                </aside>
             </div>
         </div>
     )

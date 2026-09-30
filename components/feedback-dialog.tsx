@@ -59,7 +59,7 @@ export function FeedbackDialog({ defaultEmail = "", open: controlledOpen, onOpen
             setOpen(false)
             setRating(0)
             setMessage("")
-        } catch (error) {
+        } catch {
             toast.error("Failed to submit feedback. Please try again.")
         } finally {
             setIsSubmitting(false)

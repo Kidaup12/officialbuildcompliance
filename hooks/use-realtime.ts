@@ -3,11 +3,9 @@
 import { useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 
 export function useRealtimeSubscription(projectId?: string) {
     const queryClient = useQueryClient()
-    const router = useRouter()
     const supabase = createClient()
 
     useEffect(() => {
@@ -23,7 +21,7 @@ export function useRealtimeSubscription(projectId?: string) {
                 (payload) => {
                     console.log('Project change received!', payload)
                     queryClient.invalidateQueries({ queryKey: ["projects"] })
-                    if (projectId && payload.new && (payload.new as any).id === projectId) {
+                    if (projectId && 'id' in payload.new && payload.new.id === projectId) {
                         queryClient.invalidateQueries({ queryKey: ["project", projectId] })
                     }
                 }
